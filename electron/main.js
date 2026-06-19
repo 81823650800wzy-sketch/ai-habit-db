@@ -70,8 +70,9 @@ function createPopupWindow(mode = 'default') {
       popupWindow.hide();
       return;
     }
-    // 显示但不抢焦点
+    // 显示并确保在最上层
     popupWindow.showInactive();
+    popupWindow.setAlwaysOnTop(true, 'screen-saver');
     popupWindow.webContents.send('switch-mode', mode);
     return;
   }
@@ -91,7 +92,6 @@ function createPopupWindow(mode = 'default') {
     alwaysOnTop: true,
     skipTaskbar: true,
     resizable: false,
-    focusable: false,  // 关键：不可聚焦
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -102,27 +102,34 @@ function createPopupWindow(mode = 'default') {
     }
   });
 
-  // Windows 特殊处理：不让窗口抢焦点
-  popupWindow.hookWindowMessage(0x0046, (wParam, lParam) => {
-    // WM_WINDOWPOSCHANGING - 防止窗口激活
-    return true;
-  });
+  // 确保窗口始终在最上层
+  popupWindow.setAlwaysOnTop(true, 'screen-saver');
 
   popupWindow.loadFile(path.join(__dirname, '..', 'src', 'popup.html'));
 
   popupWindow.once('ready-to-show', () => {
-    // 使用 showInactive 而不是 show+focus
+    // 显示窗口并确保在最上层
     popupWindow.showInactive();
+    popupWindow.setAlwaysOnTop(true, 'screen-saver');
     popupWindow.webContents.send('init-mode', mode);
   });
 
+  // 失去焦点时关闭（但不是立即，给点击面板留时间）
+  let blurTimeout = null;
   popupWindow.on('blur', () => {
-    // 失去焦点时隐藏
-    setTimeout(() => {
+    blurTimeout = setTimeout(() => {
       if (popupWindow && !popupWindow.isDestroyed()) {
         popupWindow.hide();
       }
-    }, 150);
+    }, 300);
+  });
+
+  // 获得焦点时取消关闭
+  popupWindow.on('focus', () => {
+    if (blurTimeout) {
+      clearTimeout(blurTimeout);
+      blurTimeout = null;
+    }
   });
 
   popupWindow.on('closed', () => {
@@ -252,6 +259,16 @@ ipcMain.handle('open-url', async (event, url) => {
 ipcMain.handle('open-file', async (event, filePath) => {
   try {
     await shell.openPath(filePath);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// 在默认浏览器中打开
+ipcMain.handle('open-in-browser', async (event, url) => {
+  try {
+    await shell.openExternal(url);
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };

@@ -191,7 +191,7 @@ def main():
         else:
             count, path = export_json(session, args.days, args.output)
 
-        print(f"✅ 导出完成: {count} 条记录 -> {path}")
+        print(f"[OK] 导出完成: {count} 条记录 -> {path}")
     finally:
         session.close()
 

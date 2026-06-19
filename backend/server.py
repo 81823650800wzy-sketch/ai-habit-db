@@ -241,12 +241,29 @@ class ClipboardMonitor:
 
     def _classify(self, content):
         content = content.strip()
+
+        # 图片 URL
+        if re.search(r'\.(png|jpg|jpeg|gif|bmp|webp|svg|ico|tiff)(\?.*)?$', content, re.IGNORECASE):
+            return 'image'
+
+        # URL
         if content.startswith(('http://', 'https://')):
             return 'url'
-        if content.startswith(('C:\\', 'D:\\', 'E:\\', '/', '~')):
+
+        # 本地文件路径
+        if re.match(r'^[A-Z]:\\|^/~|^/', content):
+            # 图片文件
+            if re.search(r'\.(png|jpg|jpeg|gif|bmp|webp|svg|ico|tiff)$', content, re.IGNORECASE):
+                return 'image'
+            # 其他文件
+            if re.search(r'\.\w{1,10}$', content):
+                return 'file'
             return 'path'
+
+        # 代码
         if self._looks_like_code(content):
             return 'code'
+
         return 'text'
 
     def _looks_like_code(self, text):
@@ -424,12 +441,12 @@ class WindowTracker:
 
         proc = process.lower()
 
-        # VS Code / Cursor: "file.py — project - Visual Studio Code"
-        if 'code' in proc or 'cursor' in proc:
+        # VS Code / Cursor / Codex: "file.py — project - Visual Studio Code"
+        if any(x in proc for x in ['code', 'cursor', 'codex']):
             parts = title.split(' — ')
             if len(parts) >= 2:
                 right = parts[1]
-                for suffix in [' - Visual Studio Code', ' - Cursor', ' - Code']:
+                for suffix in [' - Visual Studio Code', ' - Cursor', ' - Code', ' - Codex']:
                     if right.endswith(suffix):
                         right = right[:-len(suffix)]
                         break
@@ -437,8 +454,8 @@ class WindowTracker:
                 if project and len(project) < 50:
                     return project
 
-        # PyCharm: "project - PyCharm"
-        if 'pycharm' in proc or 'idea' in proc:
+        # PyCharm / IDEA: "project - PyCharm"
+        if any(x in proc for x in ['pycharm', 'idea', 'webstorm', 'phpstorm']):
             parts = title.split(' - ')
             if len(parts) >= 2:
                 project = parts[0].strip()
@@ -446,7 +463,7 @@ class WindowTracker:
                     return project
 
         # 终端: "path - Terminal"
-        if 'terminal' in proc or 'cmd' in proc or 'powershell' in proc:
+        if any(x in proc for x in ['terminal', 'cmd', 'powershell', 'wt']):
             parts = title.split(' - ')
             if len(parts) >= 2:
                 project = parts[0].strip()
@@ -462,8 +479,8 @@ class WindowTracker:
 
         proc = process.lower()
 
-        # VS Code: "filename.ext — project"
-        if 'code' in proc or 'cursor' in proc:
+        # VS Code / Codex: "filename.ext — project"
+        if any(x in proc for x in ['code', 'cursor', 'codex']):
             parts = title.split(' — ')
             if len(parts) >= 2:
                 filename = parts[0].strip()
@@ -478,6 +495,14 @@ class WindowTracker:
                 if '.' in filename:
                     return filename
 
+        # 浏览器: 提取URL中的文件名
+        if any(x in proc for x in ['chrome', 'edge', 'firefox']):
+            # 尝试从标题中提取URL
+            import re
+            url_match = re.search(r'https?://[^\s]+', title)
+            if url_match:
+                return url_match.group(0)
+
         return None
 
     def _categorize(self, process):
@@ -485,7 +510,7 @@ class WindowTracker:
         proc = process.lower()
 
         # IDE / 代码编辑器
-        if any(x in proc for x in ['code', 'cursor', 'pycharm', 'idea', 'webstorm', 'phpstorm', 'sublime', 'atom', 'notepad++', 'vim', 'nvim']):
+        if any(x in proc for x in ['code', 'cursor', 'codex', 'pycharm', 'idea', 'webstorm', 'phpstorm', 'sublime', 'atom', 'notepad++', 'vim', 'nvim']):
             return 'coding'
 
         # 浏览器

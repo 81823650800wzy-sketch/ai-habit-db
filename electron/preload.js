@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('habitDB', {
   // 文件/URL 操作
   openUrl: (url) => ipcRenderer.invoke('open-url', url),
   openFile: (filePath) => ipcRenderer.invoke('open-file', filePath),
+  openInBrowser: (url) => ipcRenderer.invoke('open-in-browser', url),
   showInFolder: (filePath) => ipcRenderer.invoke('show-in-folder', filePath),
   openProject: (projectPath, appName) => ipcRenderer.invoke('open-project', { projectPath, appName }),
   launchApp: (appName) => ipcRenderer.invoke('launch-app', appName),
