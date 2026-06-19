@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit DB</title>
+    <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+    <div class="popup-container" id="popupContainer">
+        <!-- 拖动区域 -->
+        <div class="drag-region"></div>
+
+        <!-- 设置按钮 -->
+        <div class="settings-btn" onclick="toggleSettings()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+        </div>
+
+        <!-- 搜索 -->
+        <div class="search-section">
+            <div class="search-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </div>
+            <input type="text" id="searchInput" class="search-input" placeholder="搜索剪切板、文件、应用..." autofocus>
+            <div class="search-badge"><kbd>⌘</kbd><kbd>K</kbd></div>
+        </div>
+
+        <!-- 导航 -->
+        <div class="nav-section">
+            <button class="nav-item active" data-category="all">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span>全部</span>
+            </button>
+            <button class="nav-item" data-category="clipboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+                <span>剪切板</span>
+                <span class="nav-count" id="clipboardCount">0</span>
+            </button>
+            <button class="nav-item" data-category="images">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <span>图片</span>
+                <span class="nav-count" id="imagesCount">0</span>
+            </button>
+            <button class="nav-item" data-category="files">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>文件</span>
+                <span class="nav-count" id="filesCount">0</span>
+            </button>
+            <button class="nav-item" data-category="projects">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span>项目</span>
+                <span class="nav-count" id="projectsCount">0</span>
+            </button>
+            <button class="nav-item" data-category="tools">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                <span>应用</span>
+                <span class="nav-count" id="toolsCount">0</span>
+            </button>
+            <button class="nav-item" data-category="snippets">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                <span>代码</span>
+                <span class="nav-count" id="snippetsCount">0</span>
+            </button>
+        </div>
+
+        <!-- 内容 -->
+        <div class="content-section" id="contentSection"></div>
+
+        <!-- 底部 -->
+        <div class="footer-section">
+            <div class="footer-keys">
+                <span class="key-hint"><kbd>↑</kbd><kbd>↓</kbd> 导航</span>
+                <span class="key-hint"><kbd>↵</kbd> 粘贴/打开</span>
+                <span class="key-hint"><kbd>Tab</kbd> 切换</span>
+                <span class="key-hint"><kbd>Esc</kbd> 关闭</span>
+            </div>
+            <div class="footer-right">
+                <span class="footer-status" id="footerStatus">就绪</span>
+                <span class="footer-divider">·</span>
+                <span class="footer-count" id="footerCount">0 条</span>
+            </div>
+        </div>
+
+        <!-- 设置面板 -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-header">
+                <span class="settings-title">设置</span>
+                <div class="settings-close" onclick="toggleSettings()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+            </div>
+            <div class="settings-content">
+                <!-- 主题 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">外观</div>
+                    <div class="settings-item">
+                        <span class="settings-label">主题</span>
+                        <div class="settings-control">
+                            <select class="select-control" id="themeSelect" onchange="changeTheme(this.value)">
+                                <option value="system">跟随系统</option>
+                                <option value="light">亮色</option>
+                                <option value="dark">暗色</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">透明度</span>
+                        <div class="settings-control">
+                            <input type="range" class="slider-control" id="opacitySlider" min="30" max="100" value="85" oninput="changeOpacity(this.value)">
+                            <span class="slider-value" id="opacityValue">85%</span>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">背景图</span>
+                        <div class="settings-control">
+                            <input type="file" id="bgImageInput" accept="image/*" onchange="changeBgImage(this)" style="display:none">
+                            <button class="select-control" onclick="document.getElementById('bgImageInput').click()">选择图片</button>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">背景图透明度</span>
+                        <div class="settings-control">
+                            <input type="range" class="slider-control" id="bgOpacitySlider" min="0" max="50" value="10" oninput="changeBgOpacity(this.value)">
+                            <span class="slider-value" id="bgOpacityValue">10%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷键 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">快捷键</div>
+                    <div class="settings-item">
+                        <span class="settings-label">唤出面板</span>
+                        <div class="settings-control">
+                            <span class="item-badge default">Ctrl+Shift+Space</span>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">剪切板</span>
+                        <div class="settings-control">
+                            <span class="item-badge default">Ctrl+Shift+C</span>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">项目</span>
+                        <div class="settings-control">
+                            <span class="item-badge default">Ctrl+Shift+P</span>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">应用</span>
+                        <div class="settings-control">
+                            <span class="item-badge default">Ctrl+Shift+T</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 采集模块 -->
+                <div class="settings-group">
+                <!-- 启动 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">启动</div>
+                    <div class="settings-item">
+                        <span class="settings-label">开机自启</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="autoStart" onclick="toggleAutoStart()"></div>
+                        </div>
+                    </div>
+                </div>
+                    <div class="settings-group-title">采集模块</div>
+                    <div class="settings-item">
+                        <span class="settings-label">剪切板记忆</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="moduleClipboard" onclick="toggleModule('clipboard')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">应用时长</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="moduleAppUsage" onclick="toggleModule('appUsage')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">窗口与项目</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="moduleWindowTracking" onclick="toggleModule('windowTracking')"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 数据 -->
+                <!-- 操作权限 -->
+                <div class="settings-group">
+                    <div class="settings-group-title">操作权限</div>
+                    <div class="settings-item">
+                        <span class="settings-label">打开文件</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="permOpenFiles" onclick="togglePermission('openFiles')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">打开链接</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="permOpenUrls" onclick="togglePermission('openUrls')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">启动应用</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="permLaunchApps" onclick="togglePermission('launchApps')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">打开文件夹</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="permOpenFolders" onclick="togglePermission('openFolders')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">自动粘贴</span>
+                        <div class="settings-control">
+                            <div class="switch-control" id="permAutoPaste" onclick="togglePermission('autoPaste')"></div>
+                        </div>
+                    </div>
+                </div>
+                    <div class="settings-group">
+                    <div class="settings-group-title">数据</div>
+                    <div class="settings-item">
+                        <span class="settings-label">敏感内容过滤</span>
+                        <div class="settings-control">
+                            <div class="switch-control active" id="privacySensitiveFilter" onclick="togglePrivacy('filterSensitiveClipboard')"></div>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">保留天数</span>
+                        <div class="settings-control">
+                            <input class="select-control" id="retentionDaysInput" type="number" min="1" max="365" value="30" onchange="changeRetentionDays(this.value)">
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">清空剪切板</span>
+                        <div class="settings-control">
+                            <button class="select-control" style="color:var(--red)" onclick="clearClipboard()">清空</button>
+                        </div>
+                    </div>
+                    <div class="settings-item">
+                        <span class="settings-label">导出数据</span>
+                        <div class="settings-control">
+                            <button class="select-control" onclick="exportData()">导出</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-wrapper" id="toastWrapper"></div>
+
+    <script src="js/popup.js"></script>
+</body>
+</html>
